@@ -31,6 +31,14 @@ export class GlobalsProvider {
 		}
 	}
 
+	public static fileExistsSync(file: string): boolean {
+		try {
+			return fs.existsSync(file) && fs.statSync(file).isFile();
+		} catch {
+			return false;
+		}
+	}
+
 	public static fileExists(file: string): Promise<boolean> {
 		return new Promise<boolean>((resolve, _reject) => {
 			fs.exists(file, (exists) => {

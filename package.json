@@ -216,6 +216,14 @@
 					],
 					"default": "latest"
 				},
+				"XSLT.resources.importPaths": {
+					"description": "Additional directories (relative to the workspace folder containing the stylesheet) used to resolve xsl:import and xsl:include href values when the path relative to the stylesheet file does not exist",
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": []
+				},
 				"XSLT.resources.xsltPackages": {
 					"description": "Associate file paths with xsl:package names",
 					"type": "array",

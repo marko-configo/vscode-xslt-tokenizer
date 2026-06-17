@@ -3,7 +3,7 @@ import { XslLexer, LanguageConfiguration, GlobalInstructionData, GlobalInstructi
 import { XsltTokenDiagnostics } from './xsltTokenDiagnostics';
 import { GlobalsProvider } from './globalsProvider';
 import * as path from 'path';
-import { exit } from 'process';
+import { resolveImportHref as resolveImportHrefWithPaths } from './resolveImportHref';
 import { DocumentChangeHandler } from './documentChangeHandler';
 import * as url from 'url';
 import { BaseToken, CharLevelState, ExitCondition, LexPosition, TokenLevelState, XPathLexer } from './xpLexer';
@@ -1218,20 +1218,33 @@ export class XsltSymbolProvider implements vscode.DocumentSymbolProvider {
 		return result;
 	}
 
-	public static resolvePath(href: string, documentPath: string) {
+	private static getImportPaths(): string[] {
+		return vscode.workspace.getConfiguration('XSLT.resources').get<string[]>('importPaths') ?? [];
+	}
 
-		if (path.isAbsolute(href)) {
-			return href;
-		} else if (href.startsWith('file:///')) {
-			return href.substring(7);
-		} else if (href.startsWith('file:/')) {
-			return href.substring(5);
-		} else {
-			href = href.startsWith('file:') ? href.substring(5) : href;
-			let basePath = path.dirname(documentPath);
-			let joinedPath = path.join(basePath, href);
-			return path.normalize(joinedPath);
-		}
+	private static getWorkspaceFolderForPath(documentPath: string): string | undefined {
+		const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(documentPath));
+		return folder?.uri.fsPath ?? vscode.workspace.rootPath ?? undefined;
+	}
+
+	public static resolveImportHref(
+		href: string,
+		documentPath: string,
+		importPaths: string[],
+		workspaceFolder: string | undefined,
+		exists: (filePath: string) => boolean = GlobalsProvider.fileExistsSync
+	): string {
+		return resolveImportHrefWithPaths(href, documentPath, importPaths, workspaceFolder, exists);
+	}
+
+	public static resolvePath(href: string, documentPath: string) {
+		return resolveImportHrefWithPaths(
+			href,
+			documentPath,
+			XsltSymbolProvider.getImportPaths(),
+			XsltSymbolProvider.getWorkspaceFolderForPath(documentPath),
+			GlobalsProvider.fileExistsSync
+		);
 	}
 
 	public static resolvePathInSettings(href: string, workspace: string) {

@@ -2,7 +2,8 @@
 import { GlobalInstructionData, GlobalInstructionType } from "./xslLexer";
 import * as vscode from "vscode";
 import { LanguageConfiguration, XslLexer} from "./xslLexer";
-import * as path from 'path';
+import { XsltSymbolProvider } from './xsltSymbolProvider';
+import * as url from 'url';
 
 export class FullDocumentLinkProvider implements vscode.DocumentLinkProvider {
 
@@ -20,9 +21,9 @@ export class FullDocumentLinkProvider implements vscode.DocumentLinkProvider {
 		let result: vscode.DocumentLink[] = [];
 		data.forEach((instruction) => {
 			if (instruction.type === GlobalInstructionType.Import || instruction.type === GlobalInstructionType.Include) {
-				const basePath = path.dirname(document.fileName);
-				const resolvedPath = path.resolve(basePath, instruction.name);
-				const uri = vscode.Uri.parse(resolvedPath);
+				const resolvedPath = XsltSymbolProvider.resolvePath(instruction.name, document.fileName);
+				const pathForUri = resolvedPath.startsWith('file:/') ? resolvedPath : url.pathToFileURL(resolvedPath).toString();
+				const uri = vscode.Uri.parse(pathForUri);
 				const startPos = new vscode.Position(instruction.token.line, instruction.token.startCharacter);
 				const endPos = new vscode.Position(instruction.token.line, instruction.token.startCharacter + (instruction.token.length + 2));
 				const link = new vscode.DocumentLink(new vscode.Range(startPos, endPos), uri);
